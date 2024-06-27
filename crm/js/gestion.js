@@ -9,6 +9,11 @@ var id_tipo_gestion = document.getElementById("sel_id_tipo_gestion").value;
 var id_resultado = document.getElementById("sel_id_resultado").value;
 var comentarios = document.getElementById("txt_comentarios").value;
 
+if (comentarios == '') {
+  mostrarAlerta("el campo no puede estar vacio, agregue un comentario.", "danger");
+  return;
+}
+
 const myHeaders = new Headers();
 myHeaders.append("Content-Type", "application/json");
 
@@ -91,8 +96,9 @@ function obtenerIdActualizar(){
   const p_id_gestion = parametros.get('id');
   if (p_id_gestion){
     g_id_gestion = p_id_gestion;
-    cargarListasDesplegables();
+    cargarListasDesplegables().then(() =>{
     obtenerDatosActualizar(p_id_gestion);
+    });
   }else {
     console.error("no se pudo obtener el id de la gestion")
   }
@@ -159,6 +165,11 @@ function actualizarGestion(){
   var id_resultado = document.getElementById("sel_id_resultado").value;
   var comentarios = document.getElementById("txt_comentarios").value;
 
+  if (comentarios == '') {
+    mostrarAlerta("el campo no puede estar vacio, agregue un comentario.", "danger");
+    return;
+  }
+  
   const myHeaders = new Headers();
   myHeaders.append("Content-Type", "application/json");
 
@@ -167,8 +178,7 @@ function actualizarGestion(){
     "id_cliente": id_cliente,
     "id_tipo_gestion": id_tipo_gestion,
     "id_resultado": id_resultado,
-    "comentarios": comentarios,
-    "fecha_registro": "2024-06-05 10:52:00"
+    "comentarios": comentarios
   });
   
   const requestOptions = {
@@ -181,7 +191,7 @@ function actualizarGestion(){
   fetch("http://144.126.210.74:8080/api/gestion/"+ g_id_gestion, requestOptions)
     .then((response) => {
       if (response.status == 200) {
-        location.href = "listar.html";
+        location.href = ("listar.html");
         mostrarAlerta("exito al actualizar datos", "success");
     } else {
         response.text().then((text) => {
@@ -230,7 +240,15 @@ function actualizarGestion(){
       
       fetch("http://144.126.210.74:8080/api/resultado?_size=200", requestOptions)
         .then((response) => response.json())
-        .then((json) => json.forEach(completarOptionResultado))
+        .then((json) => {
+          json.forEach(element => {
+            const selectResultado = document.querySelector("#sel_id_resultado");
+            const option = document.createElement("option");
+            option.value = element.id_resultado;
+            option.textContent = element.nombre_resultado;
+            selectResultado.appendChild(option);
+            });
+        })
         .catch((error) => console.error('Error', error));
     }
     function completarOptionResultado(element,index,arr){
@@ -246,7 +264,16 @@ function actualizarGestion(){
       
       fetch("http://144.126.210.74:8080/api/cliente?_size=200", requestOptions)
         .then((response) => response.json())
-        .then((json) => json.forEach(completarOptionCliente))
+        .then(json => {
+          json.forEach(element => {
+              const selectCliente = document.querySelector("#sel_id_cliente");
+              const option = document.createElement("option");
+              option.value = element.id_cliente;
+              option.textContent = `${element.nombres} ${element.apellidos}`;
+              selectCliente.appendChild(option);
+          });
+      })
+
         .catch((error) => console.error('Error', error));
     }
     function completarOptionCliente(element,index,arr){
@@ -261,7 +288,15 @@ function actualizarGestion(){
       
       fetch("http://144.126.210.74:8080/api/usuario?_size=200", requestOptions)
         .then((response) => response.json())
-        .then((json) => json.forEach(completarOptionUsuario))
+        .then(json => {
+          json.forEach(element => {
+              const selectUsuario = document.querySelector("#sel_id_usuario");
+              const option = document.createElement("option");
+              option.value = element.id_usuario;
+              option.textContent = `${element.nombres} ${element.apellidos}`;
+              selectUsuario.appendChild(option);
+          });
+      })
         .catch((error) => console.error('Error', error));
     }
     function completarOptionUsuario(element,index,arr){
@@ -277,7 +312,15 @@ function actualizarGestion(){
       
       fetch("http://144.126.210.74:8080/api/tipo_gestion?_size=200", requestOptions)
         .then((response) => response.json())
-        .then((json) => json.forEach(completarOptionTipoGestion))
+        .then(json => {
+          json.forEach(element => {
+              const selectTipoGestion = document.querySelector("#sel_id_tipo_gestion");
+              const option = document.createElement("option");
+              option.value = element.id_tipo_gestion;
+              option.textContent = element.nombre_tipo_gestion;
+              selectTipoGestion.appendChild(option);
+          });
+      })
         .catch((error) => console.error('Error', error));
     }
     function completarOptionTipoGestion(element,index,arr){
@@ -286,10 +329,12 @@ function actualizarGestion(){
     }
 
     function cargarListasDesplegables(){
-      cargarSelectResultado();
-      cargarSelectCliente();
-      cargarSelectUsuario();
-      cargarSelectTipoGestion();
+      return Promise.all([
+      cargarSelectResultado(),
+      cargarSelectCliente(),
+      cargarSelectUsuario(),
+      cargarSelectTipoGestion()
+    ]);
     }
 
     function obtenerFechaHora(){
